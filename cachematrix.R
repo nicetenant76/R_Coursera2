@@ -1,15 +1,41 @@
-## Put comments here that give an overall description of what your
-## functions do
+## Demonstrates how to leverage lexical scoping in R to have manageable mutable
+## state without using global variables directly.
+##
+## A builder function (makeCacheMatrix) creates an environment that is preserved
+## after the function exits and is used to cache values safely for the lifetime of the 
+## enclosing scope.
 
-## Write a short comment describing this function
 
-makeCacheMatrix <- function(x = matrix()) {
+# provides environment for matrix and cached inverse value
+# returns list of closures for access
+makeCacheMatrix <- function(m = matrix()) {
+    cachedInverse <- NULL
+    set <- function(newMatrix) {
+        m <<- newMatrix
+        cachedInverse <<- NULL # wipe cache on change
+    }
+    get <- function() m
+    setInverse <- function(newInverse) cachedInverse <<- newInverse
+    getInverse <- function() cachedInverse
 
+    list(
+        set = set,
+        get = get,
+        setInverse = setInverse,
+        getInverse = getInverse
+    )
 }
 
 
-## Write a short comment describing this function
-
+# uses the passed in makeCacheMatrix object (x) to either return a cached inverse 
+# of its matrix or compute it once for subsequent cached access
 cacheSolve <- function(x, ...) {
-        ## Return a matrix that is the inverse of 'x'
+        im <- x$getInverse()
+        if (!is.null(im)) {
+            message("getting cached inverse")
+            return(im)
+        }
+        # inverse has not been computed yet
+        x$setInverse(solve(x$get()))
+        x$getInverse()
 }
